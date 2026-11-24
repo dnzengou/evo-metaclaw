@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evo-metaclaw"
-version = "0.1.0"
-description = "Live conversation-driven meta-learning: capture signals, distill skills, emit to evo-skillopt"
+version = "0.2.0"
+description = "The lock on self-evolving AI agents — four-axis claw gate + live conversation-driven meta-learning"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
