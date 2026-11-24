@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>evo-metaclaw — The lock on self-evolving AI agents</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+          colors: {
+            obsidian: '#0a0c10',
+            surface: '#0f1218',
+            surfaceHover: '#141821',
+            borderSubtle: '#1e2430',
+            borderHighlight: '#2d3648',
+            emeraldAccent: '#10b981',
+            cyanAccent: '#06b6d4',
+            amberAccent: '#f59e0b',
+            crimsonAccent: '#ef4444',
+          },
+          boxShadow: {
+            'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.2)',
+            'glow-crimson': '0 0 25px -5px rgba(239, 68, 68, 0.25)',
+            'glow-cyan': '0 0 25px -5px rgba(6, 182, 212, 0.18)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Subtle background grid pattern for architectural depth */
+    .bg-grid-pattern {
+      background-size: 36px 36px;
+      background-image: 
+        linear-gradient(to right, rgba(30, 36, 48, 0.35) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 36, 48, 0.35) 1px, transparent 1px);
+    }
+    
+    /* Custom range slider styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: #1e2430;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2px solid #0a0c10;
+      margin-top: -6px;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      background: #34d399;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0c10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e2430;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2d3648;
+    }
+
+    /* Pulse animation for pipeline nodes */
+    @keyframes flowPulse {
+      0%, 100% { opacity: 0.45; }
+      50% { opacity: 1; }
+    }
+    .animate-flow {
+      animation: flowPulse 2.6s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-obsidian text-slate-200 font-sans antialiased selection:bg-emerald-500/20 selection:text-emerald-300 overflow-x-hidden">
+
+  <!-- Toast Notification Container (Replaces alert()) -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 w-full bg-obsidian/85 backdrop-blur-md border-b border-borderSubtle">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <a href="#" class="flex items-center gap-2.5 group">
+          <div class="w-8 h-8 rounded-lg bg-surface border border-borderHighlight flex items-center justify-center group-hover:border-emerald-500/60 transition-colors">
+            <!-- Claw / Lock SVG Emblem -->
+            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </div>
+          <span class="font-mono font-bold text-base tracking-tight text-white">evo-metaclaw</span>
+        </a>
+        <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-medium bg-surface border border-borderSubtle text-slate-400">
+          MIT • stdlib-only
+        </span>
+      </div>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden md:flex items-center gap-6 text-sm text-slate-400">
+        <a href="#simulator" class="hover:text-white transition-colors">The Claw</a>
+        <a href="#four-axes" class="hover:text-white transition-colors">Four Axes</a>
+        <a href="#signal-pipeline" class="hover:text-white transition-colors">Signal Pipeline</a>
+        <a href="#triad-stack" class="hover:text-white transition-colors">Triad Stack</a>
+        <a href="#honest-limits" class="hover:text-white transition-colors">Honest Limits</a>
+      </nav>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-2.5">
+        <a href="https://github.com/dnzengou/evo-metaclaw" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-borderHighlight text-xs font-mono text-slate-300 transition-all">
+          <svg class="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <!-- Mobile Menu Toggle -->
+        <button id="mobile-menu-btn" aria-label="Toggle Menu" class="md:hidden p-2 rounded-lg bg-surface border border-borderSubtle text-slate-300 hover:text-white">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Navigation -->
+    <div id="mobile-menu" class="hidden md:hidden bg-surface border-b border-borderSubtle px-4 py-3 space-y-2">
+      <a href="#simulator" class="block py-1.5 text-sm text-slate-300 hover:text-emerald-400">The Claw Simulator</a>
+      <a href="#four-axes" class="block py-1.5 text-sm text-slate-300 hover:text-emerald-400">Four Axes (B, Ci, E, Bl)</a>
+      <a href="#signal-pipeline" class="block py-1.5 text-sm text-slate-300 hover:text-emerald-400">Signal Pipeline</a>
+      <a href="#triad-stack" class="block py-1.5 text-sm text-slate-300 hover:text-emerald-400">Triad Stack</a>
+      <a href="#honest-limits" class="block py-1.5 text-sm text-slate-300 hover:text-emerald-400">Honest Limits</a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="relative pt-14 pb-16 sm:pt-20 sm:pb-24 bg-grid-pattern border-b border-borderSubtle">
+    <!-- Subtle radial vignette -->
+    <div class="absolute inset-0 bg-gradient-to-b from-obsidian/30 via-obsidian/75 to-obsidian pointer-events-none"></div>
+
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="max-w-3xl">
+        <!-- Eyebrow Badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-borderHighlight text-xs font-mono text-cyan-400 mb-6">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>EVOFORGE TRIAD • LAYER 3 • GOVERNANCE + SIGNAL ORGAN</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1] mb-4">
+          The lock on self-evolving AI agents.
+        </h1>
+
+        <!-- Subheadline -->
+        <p class="text-xl sm:text-2xl font-medium text-slate-300 mb-6">
+          Evolution proposes. <span class="text-emerald-400 font-semibold">The claw decides what is allowed to stay.</span>
+        </p>
+
+        <!-- Dual Role Description -->
+        <p class="text-base text-slate-400 leading-relaxed mb-8 max-w-2xl">
+          Governance and live meta-learning in one zero-dependency layer. Every proposed child skill is scored on four constitutional axes via <code class="px-1.5 py-0.5 rounded bg-surface border border-borderSubtle font-mono text-xs text-emerald-300">metaclaw.gate()</code> before execution, while production conversations are captured and distilled into candidate skills.
+        </p>
+
+        <!-- Primary CTAs -->
+        <div class="flex flex-wrap items-center gap-3.5 mb-12">
+          <a href="#simulator" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-obsidian font-semibold text-sm transition-all shadow-glow-emerald">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Try Interactive Claw Simulator
+          </a>
+          <a href="#quickstart" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-surface hover:bg-surfaceHover border border-borderHighlight text-slate-200 font-mono text-sm transition-all">
+            <span>$ quickstart cli</span>
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Interactive Architectural Gate Diagram -->
+      <div class="rounded-2xl bg-surface/90 border border-borderSubtle p-5 sm:p-7 shadow-2xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-borderSubtle">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Pre-Execution Mutation Gate Architecture</span>
+          </div>
+          <span id="diagram-hint" class="text-xs font-mono text-cyan-400">Click any gate axis node to inspect constraint</span>
+        </div>
+
+        <!-- Flow Diagram Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+          <!-- Parent -> Mutate -> Child -->
+          <div class="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center justify-between gap-3 bg-obsidian/80 border border-borderSubtle rounded-xl p-4">
+            <div class="text-center sm:text-left">
+              <div class="text-[11px] font-mono text-slate-500 uppercase">Champion</div>
+              <div class="font-mono text-sm font-semibold text-slate-200">parent_md</div>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs font-mono text-amber-400">
+              <span class="hidden sm:inline">──</span>
+              <span class="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30">mutate</span>
+              <span>▶</span>
+            </div>
+            <div class="text-center sm:text-right">
+              <div class="text-[11px] font-mono text-slate-500 uppercase">Candidate</div>
+              <div class="font-mono text-sm font-semibold text-cyan-300">child_md</div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="hidden lg:flex lg:col-span-1 justify-center text-slate-500 font-mono text-sm">
+            ──▶
+          </div>
+
+          <!-- Claw Gate Box -->
+          <div class="lg:col-span-4 bg-obsidian border border-emerald-500/40 rounded-xl p-4 shadow-glow-emerald">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-mono text-xs font-bold text-emerald-400 tracking-wide">┌─ CLAW GATE ─────────┐</span>
+              <span class="text-[11px] font-mono text-slate-500">metaclaw.gate()</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="inspectDiagramAxis('B')" class="diagram-axis-btn text-left p-2 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-emerald-500/50 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-emerald-400">B</span>
+                  <span class="text-[10px] font-mono text-slate-500">Budget</span>
+                </div>
+                <div class="font-mono text-[11px] text-slate-300 mt-0.5">budget ok?</div>
+              </button>
+              <button type="button" onclick="inspectDiagramAxis('Ci')" class="diagram-axis-btn text-left p-2 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-cyan-500/50 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-cyan-400">Ci</span>
+                  <span class="text-[10px] font-mono text-slate-500">Circuit</span>
+                </div>
+                <div class="font-mono text-[11px] text-slate-300 mt-0.5">depth ≤ 2?</div>
+              </button>
+              <button type="button" onclick="inspectDiagramAxis('E')" class="diagram-axis-btn text-left p-2 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-amber-500/50 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-amber-400">E</span>
+                  <span class="text-[10px] font-mono text-slate-500">Evolution</span>
+                </div>
+                <div class="font-mono text-[11px] text-slate-300 mt-0.5">fitness ≥ .8×?</div>
+              </button>
+              <button type="button" onclick="inspectDiagramAxis('Bl')" class="diagram-axis-btn text-left p-2 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-rose-500/50 transition-all">
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-xs font-bold text-rose-400">Bl</span>
+                  <span class="text-[10px] font-mono text-slate-500">Blacklist</span>
+                </div>
+                <div class="font-mono text-[11px] text-slate-300 mt-0.5">clauses intact?</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="hidden lg:flex lg:col-span-1 justify-center text-slate-500 font-mono text-sm">
+            ──▶
+          </div>
+
+          <!-- Outcomes -->
+          <div class="lg:col-span-2 flex flex-col gap-2.5">
+            <div class="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/40 flex items-center justify-between">
+              <span class="font-mono text-xs font-bold text-emerald-400">PASS</span>
+              <span class="text-[11px] font-mono text-emerald-300/80">stamped</span>
+            </div>
+            <div class="p-3 rounded-xl bg-rose-950/30 border border-rose-500/40 flex items-center justify-between">
+              <span class="font-mono text-xs font-bold text-rose-400">REJECT</span>
+              <span class="text-[11px] font-mono text-rose-300/80">+ logged axes</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Inspection Detail Bar -->
+        <div id="diagram-detail-panel" class="mt-4 pt-3.5 border-t border-borderSubtle flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono text-slate-400">
+          <div>
+            <span class="text-emerald-400 font-semibold">[INVARIANT]</span> Code, not prose: every mutation is evaluated deterministically before execution.
+          </div>
+          <a href="#simulator" class="text-cyan-400 hover:underline shrink-0">Test in simulator →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Interactive Claw Gate Simulator -->
+  <section id="simulator" class="py-16 sm:py-24 border-b border-borderSubtle">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+        <div>
+          <div class="text-xs font-mono uppercase tracking-wider text-emerald-400 mb-2">Interactive Sandbox • metaclaw.gate()</div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Live Claw Gate Simulator</h2>
+          <p class="text-sm sm:text-base text-slate-400 mt-1.5 max-w-2xl">
+            Adjust mutation parameters below. Notice how a <span class="text-slate-200 font-medium">+6% fitness gain</span> is completely irrelevant if recursion depth or constitutional clauses fail.
+          </p>
+        </div>
+        <!-- Preset Buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="applyPreset('readme_reject')" class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surfaceHover border border-rose-500/40 text-xs font-mono text-rose-300 transition-colors">
+            Preset: README Default (REJECT)
+          </button>
+          <button type="button" onclick="applyPreset('valid_pass')" class="px-3 py-1.5 rounded-lg bg-surface hover:bg-surfaceHover border border-emerald-500/40 text-xs font-mono text-emerald-300 transition-colors">
+            Preset: Valid Child (PASS)
+          </button>
+        </div>
+      </div>
+
+      <!-- Simulator Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Left Controls Panel -->
+        <div class="lg:col-span-6 rounded-2xl bg-surface border border-borderSubtle p-5 sm:p-6 space-y-6">
+          <div class="flex items-center justify-between border-b border-borderSubtle pb-3.5">
+            <span class="font-mono text-xs font-semibold uppercase tracking-wider text-slate-300">Mutation Parameters</span>
+            <span id="fitness-delta-pill" class="px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              +6.0% fitness delta
+            </span>
+          </div>
+
+          <!-- Axis E: Parent & Child Fitness -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-semibold text-amber-400">[E] Evolution Axis (child ≥ 0.8 × parent)</span>
+              <span id="e-threshold-label" class="text-xs font-mono text-slate-400">Min required: 0.640</span>
+            </div>
+
+            <!-- Parent Fitness Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1.5">
+                <label for="parent-fitness" class="text-slate-300">parent_fitness</label>
+                <span id="parent-fitness-val" class="text-white font-semibold">0.800</span>
+              </div>
+              <input id="parent-fitness" type="range" min="0" max="1" step="0.005" value="0.80" class="w-full" />
+            </div>
+
+            <!-- Child Fitness Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1.5">
+                <label for="child-fitness" class="text-slate-300">child_fitness</label>
+                <span id="child-fitness-val" class="text-cyan-300 font-semibold">0.848</span>
+              </div>
+              <input id="child-fitness" type="range" min="0" max="1" step="0.002" value="0.848" class="w-full" />
+            </div>
+          </div>
+
+          <!-- Axis Ci: Recursion Depth -->
+          <div class="pt-4 border-t border-borderSubtle">
+            <div class="flex items-center justify-between mb-2.5">
+              <label for="depth-slider" class="text-xs font-mono font-semibold text-cyan-400">[Ci] Circuit Axis (depth ≤ 2)</label>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="stepDepth(-1)" class="w-7 h-7 rounded-lg bg-obsidian border border-borderSubtle hover:border-borderHighlight font-mono text-sm text-slate-300">-</button>
+                <span id="depth-val" class="w-8 text-center font-mono text-sm font-bold text-white">3</span>
+                <button type="button" onclick="stepDepth(1)" class="w-7 h-7 rounded-lg bg-obsidian border border-borderSubtle hover:border-borderHighlight font-mono text-sm text-slate-300">+</button>
+              </div>
+            </div>
+            <input id="depth-slider" type="range" min="0" max="5" step="1" value="3" class="w-full" />
+            <div class="flex justify-between text-[11px] font-mono text-slate-500 mt-1">
+              <span>0 (root)</span>
+              <span>1</span>
+              <span class="text-emerald-400">2 (max_depth)</span>
+              <span class="text-rose-400">3</span>
+              <span class="text-rose-400">4</span>
+              <span class="text-rose-400">5</span>
+            </div>
+          </div>
+
+          <!-- Axis B: Budget Delta -->
+          <div class="pt-4 border-t border-borderSubtle">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-mono font-semibold text-emerald-400">[B] Budget Axis (cost & hours)</span>
+              <span id="budget-status-text" class="text-xs font-mono text-emerald-400">Within bounds</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" id="budget-ok-btn" onclick="setBudget(true)" class="py-2 px-3 rounded-xl font-mono text-xs border transition-all bg-emerald-500/15 border-emerald-500/50 text-emerald-300 font-semibold">
+                Within Budget (1.0×)
+              </button>
+              <button type="button" id="budget-jump-btn" onclick="setBudget(false)" class="py-2 px-3 rounded-xl font-mono text-xs border transition-all bg-obsidian border-borderSubtle text-slate-400 hover:text-slate-200">
+                Resource Grab (+340%)
+              </button>
+            </div>
+          </div>
+
+          <!-- Axis Bl: Constitutional Clauses -->
+          <div class="pt-4 border-t border-borderSubtle">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="text-xs font-mono font-semibold text-rose-400">[Bl] Blacklist Axis (Constitutional Clauses)</span>
+              <span id="bl-status-text" class="text-xs font-mono text-rose-400">1 clause deleted!</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2.5">
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-obsidian border border-borderSubtle cursor-pointer hover:border-borderHighlight select-none">
+                <input type="checkbox" id="clause-airgap" checked onchange="evaluateGate()" class="w-4 h-4 rounded accent-emerald-500">
+                <span class="font-mono text-xs text-slate-200">Airgap</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-obsidian border border-borderSubtle cursor-pointer hover:border-borderHighlight select-none">
+                <input type="checkbox" id="clause-killswitch" onchange="evaluateGate()" class="w-4 h-4 rounded accent-emerald-500">
+                <span class="font-mono text-xs text-slate-200">Kill-switch</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-obsidian border border-borderSubtle cursor-pointer hover:border-borderHighlight select-none">
+                <input type="checkbox" id="clause-ownership" checked onchange="evaluateGate()" class="w-4 h-4 rounded accent-emerald-500">
+                <span class="font-mono text-xs text-slate-200">Ownership</span>
+              </label>
+              <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-obsidian border border-borderSubtle cursor-pointer hover:border-borderHighlight select-none">
+                <input type="checkbox" id="clause-ratelimit" checked onchange="evaluateGate()" class="w-4 h-4 rounded accent-emerald-500">
+                <span class="font-mono text-xs text-slate-200">Rate-limit</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Live Verdict & Code Output -->
+        <div class="lg:col-span-6 space-y-5">
+          <!-- Verdict Card -->
+          <div id="verdict-card" class="rounded-2xl bg-rose-950/25 border border-rose-500/50 p-5 sm:p-6 transition-all shadow-glow-crimson">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Gate Verdict</span>
+              <span id="verdict-badge" class="px-3 py-1 rounded-lg font-mono text-sm font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50">
+                REJECTED (Ci, Bl)
+              </span>
+            </div>
+            <p id="verdict-explanation" class="text-sm text-slate-300 leading-relaxed mb-4">
+              The +6.0% fitness gain is irrelevant. Child mutation violated recursion circuit limit (depth 3 > 2) and deleted constitutional clause(s): <code class="text-rose-300 font-mono">kill-switch</code>.
+            </p>
+            <!-- Axis Pill Strip -->
+            <div class="grid grid-cols-4 gap-2 pt-3 border-t border-white/10">
+              <div id="pill-B" class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center">
+                <div class="font-mono text-xs font-bold text-emerald-400">B</div>
+                <div class="font-mono text-[10px] text-emerald-300">OK</div>
+              </div>
+              <div id="pill-Ci" class="p-2 rounded-lg bg-rose-500/15 border border-rose-500/40 text-center">
+                <div class="font-mono text-xs font-bold text-rose-400">Ci</div>
+                <div class="font-mono text-[10px] text-rose-300">FAIL</div>
+              </div>
+              <div id="pill-E" class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center">
+                <div class="font-mono text-xs font-bold text-emerald-400">E</div>
+                <div class="font-mono text-[10px] text-emerald-300">OK</div>
+              </div>
+              <div id="pill-Bl" class="p-2 rounded-lg bg-rose-500/15 border border-rose-500/40 text-center">
+                <div class="font-mono text-xs font-bold text-rose-400">Bl</div>
+                <div class="font-mono text-[10px] text-rose-300">FAIL</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Python Code Preview -->
+          <div class="rounded-2xl bg-surface border border-borderSubtle overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 bg-obsidian border-b border-borderSubtle">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500/70"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500/70"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/70"></span>
+                <span class="ml-1 font-mono text-xs text-slate-400">live_gate_check.py</span>
+              </div>
+              <button type="button" onclick="copyElementText('live-python-code', 'Python snippet copied')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-surface hover:bg-surfaceHover border border-borderSubtle text-xs font-mono text-slate-300 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre class="p-4 sm:p-5 overflow-x-auto text-xs sm:text-[13px] font-mono leading-relaxed text-slate-300"><code id="live-python-code"></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: The Four Axes -->
+  <section id="four-axes" class="py-16 sm:py-24 border-b border-borderSubtle bg-surface/30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="max-w-2xl mb-12">
+        <div class="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">Constitutional Constraints</div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">The Four Axes</h2>
+        <p class="text-sm sm:text-base text-slate-400 mt-2">
+          Every proposed child mutation is evaluated deterministically across four orthogonal invariants before it is allowed to run.
+        </p>
+      </div>
+
+      <!-- 2x2 High-Craft Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+        <!-- Axis B -->
+        <div class="rounded-2xl bg-surface border border-borderSubtle hover:border-emerald-500/40 p-6 transition-all group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center font-mono font-bold text-base text-emerald-400">
+                B
+              </span>
+              <div>
+                <h3 class="font-bold text-lg text-white">Budget</h3>
+                <span class="font-mono text-xs text-slate-400">Resource & Cost Envelope</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-md bg-obsidian border border-borderSubtle font-mono text-xs text-emerald-300">
+              cost & hours ≤ cap
+            </span>
+          </div>
+          <div class="space-y-2.5 text-sm">
+            <div class="p-3 rounded-xl bg-obsidian/70 border border-borderSubtle">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Rule</span>
+              <p class="text-slate-200 font-medium">Cost and hours must not jump.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-obsidian/40 border border-borderSubtle/60">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Why</span>
+              <p class="text-slate-400">Prevents "improvement" that is secretly a resource grab.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Axis Ci -->
+        <div class="rounded-2xl bg-surface border border-borderSubtle hover:border-cyan-500/40 p-6 transition-all group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center font-mono font-bold text-base text-cyan-400">
+                Ci
+              </span>
+              <div>
+                <h3 class="font-bold text-lg text-white">Circuit</h3>
+                <span class="font-mono text-xs text-slate-400">Recursion Depth Breaker</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-md bg-obsidian border border-borderSubtle font-mono text-xs text-cyan-300">
+              depth ≤ 2
+            </span>
+          </div>
+          <div class="space-y-2.5 text-sm">
+            <div class="p-3 rounded-xl bg-obsidian/70 border border-borderSubtle">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Rule</span>
+              <p class="text-slate-200 font-medium">Self-edit recursion depth ≤ 2.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-obsidian/40 border border-borderSubtle/60">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Why</span>
+              <p class="text-slate-400">Caps self-modification depth (matches EvoForge <code class="font-mono text-xs text-cyan-300">max_depth=2</code>).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Axis E -->
+        <div class="rounded-2xl bg-surface border border-borderSubtle hover:border-amber-500/40 p-6 transition-all group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center font-mono font-bold text-base text-amber-400">
+                E
+              </span>
+              <div>
+                <h3 class="font-bold text-lg text-white">Evolution</h3>
+                <span class="font-mono text-xs text-slate-400">Fitness Floor Guard</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-md bg-obsidian border border-borderSubtle font-mono text-xs text-amber-300">
+              fitness ≥ 0.8 × parent
+            </span>
+          </div>
+          <div class="space-y-2.5 text-sm">
+            <div class="p-3 rounded-xl bg-obsidian/70 border border-borderSubtle">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Rule</span>
+              <p class="text-slate-200 font-medium">Child fitness ≥ 0.8 × parent.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-obsidian/40 border border-borderSubtle/60">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Why</span>
+              <p class="text-slate-400">Blocks regressions dressed as exploration.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Axis Bl -->
+        <div class="rounded-2xl bg-surface border border-borderSubtle hover:border-rose-500/40 p-6 transition-all group">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center font-mono font-bold text-base text-rose-400">
+                Bl
+              </span>
+              <div>
+                <h3 class="font-bold text-lg text-white">Blacklist</h3>
+                <span class="font-mono text-xs text-slate-400">Non-Negotiable Preconditions</span>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 rounded-md bg-obsidian border border-borderSubtle font-mono text-xs text-rose-300">
+              clauses intact
+            </span>
+          </div>
+          <div class="space-y-2.5 text-sm">
+            <div class="p-3 rounded-xl bg-obsidian/70 border border-borderSubtle">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Rule</span>
+              <p class="text-slate-200 font-medium">Airgap, kill-switch, ownership, rate-limit… clauses cannot be deleted.</p>
+            </div>
+            <div class="p-3 rounded-xl bg-obsidian/40 border border-borderSubtle/60">
+              <span class="font-mono text-xs uppercase text-slate-500 block mb-0.5">Why</span>
+              <p class="text-slate-400">The constitutional layer — not trade-offs, preconditions.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Callout Banner -->
+      <div class="rounded-2xl bg-gradient-to-r from-surface via-surface to-emerald-950/20 border border-borderHighlight p-6 sm:p-7">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-3xl">
+            <div class="inline-flex items-center gap-2 font-mono text-xs font-bold text-rose-400 uppercase tracking-wider">
+              <span>⚡ Fail one axis, the child dies.</span>
+            </div>
+            <p class="text-sm sm:text-base text-slate-200 leading-relaxed">
+              Rejections carry their failing axes, so attempted escapes are themselves auditable data. Distinct from <span class="font-mono text-cyan-300">evo-skillopt</span>'s held-out Q-gate:
+            </p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
+            <div class="p-3.5 rounded-xl bg-obsidian border border-borderSubtle">
+              <div class="font-mono text-[11px] text-slate-500 uppercase">evo-skillopt Q-gate</div>
+              <div class="text-sm font-medium text-slate-300 mt-1">"Is the child better?"</div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-obsidian border border-emerald-500/40">
+              <div class="font-mono text-[11px] text-emerald-400 uppercase">evo-metaclaw Gate</div>
+              <div class="text-sm font-semibold text-white mt-1">"Is the child allowed to exist?"</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Signal Pipeline (The Learning Half) -->
+  <section id="signal-pipeline" class="py-16 sm:py-24 border-b border-borderSubtle">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="max-w-2xl mb-10">
+        <div class="text-xs font-mono uppercase tracking-wider text-emerald-400 mb-2">The Learning Half • Signal Organ</div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Signal Pipeline & Boundary Discipline</h2>
+        <p class="text-sm sm:text-base text-slate-400 mt-2">
+          Conversation capture turns production interactions into append-only SQLite (WAL) events, distilled at session end into hypothesis drafts for gated training.
+        </p>
+      </div>
+
+      <!-- 3-Stage Visual Pipeline Flow -->
+      <div class="rounded-2xl bg-surface border border-borderSubtle p-5 sm:p-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          <!-- Stage 1: evo-metaclaw (Active) -->
+          <div class="relative rounded-xl bg-obsidian border-2 border-emerald-500/60 p-5 shadow-glow-emerald">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-mono text-[11px] font-bold">STAGE 1 • YOU ARE HERE</span>
+              <span class="font-mono text-xs text-slate-500">SQLite WAL</span>
+            </div>
+            <h3 class="font-mono text-base font-bold text-white mb-1">evo-metaclaw</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              <span class="text-emerald-300 font-mono">claw + capture + summarize</span><br/>
+              Records production signals and distills candidate <code class="text-slate-200">SKILL.md</code> drafts stamped <span class="text-amber-300">"must pass held-out gate before use"</span>.
+            </p>
+          </div>
+
+          <!-- Stage 2: evo-skillopt -->
+          <div class="relative rounded-xl bg-obsidian border border-borderSubtle p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-surface text-cyan-400 font-mono text-[11px]">STAGE 2 • TRAINING</span>
+                <span class="font-mono text-xs text-slate-500">Q-Gate</span>
+              </div>
+              <h3 class="font-mono text-base font-bold text-slate-200 mb-1">evo-skillopt</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                <span class="text-cyan-300 font-mono">train + held-out gate + rollback</span><br/>
+                Evaluates distilled hypotheses against held-out benchmarks, promoting only verified improvements.
+              </p>
+            </div>
+          </div>
+
+          <!-- Stage 3: EvoForge -->
+          <div class="relative rounded-xl bg-obsidian border border-borderSubtle p-5 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2 py-0.5 rounded bg-surface text-amber-400 font-mono text-[11px]">STAGE 3 • RUNTIME</span>
+                <span class="font-mono text-xs text-slate-500">Genome Pack</span>
+              </div>
+              <h3 class="font-mono text-base font-bold text-slate-200 mb-1">EvoForge</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">
+                <span class="text-amber-300 font-mono">install + idle-window mutation</span><br/>
+                Installs promoted skills as genome packs and dispatches scored champions on live tasks.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Signal Event Explorer & Boundary Discipline -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Signal Kinds Table / Selector -->
+        <div class="lg:col-span-7 rounded-2xl bg-surface border border-borderSubtle overflow-hidden">
+          <div class="px-5 py-3.5 bg-obsidian border-b border-borderSubtle flex items-center justify-between">
+            <span class="font-mono text-xs font-semibold uppercase tracking-wider text-slate-300">Captured Signal Taxonomy</span>
+            <span class="font-mono text-[11px] text-slate-500">Click row to inspect event</span>
+          </div>
+          <div class="divide-y divide-borderSubtle" id="signal-table-body">
+            <button type="button" onclick="selectSignalKind('task_outcome')" class="signal-row w-full text-left px-5 py-3.5 hover:bg-surfaceHover transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-surfaceHover/60" data-kind="task_outcome">
+              <div class="font-mono text-xs font-semibold text-cyan-300">
+                task_success <span class="text-slate-500">/</span> task_failure
+              </div>
+              <div class="text-xs text-slate-400">Exchange outcomes (errors, empty replies)</div>
+            </button>
+
+            <button type="button" onclick="selectSignalKind('user_feedback')" class="signal-row w-full text-left px-5 py-3.5 hover:bg-surfaceHover transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2" data-kind="user_feedback">
+              <div class="font-mono text-xs font-semibold text-emerald-400 flex items-center gap-2">
+                <span>user_feedback</span>
+                <span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-[10px] text-emerald-300">HIGHEST VALUE</span>
+              </div>
+              <div class="text-xs text-slate-400">Explicit thumbs/correction — highest value</div>
+            </button>
+
+            <button type="button" onclick="selectSignalKind('coordination')" class="signal-row w-full text-left px-5 py-3.5 hover:bg-surfaceHover transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2" data-kind="coordination">
+              <div class="font-mono text-xs font-semibold text-amber-300">
+                coordination
+              </div>
+              <div class="text-xs text-slate-400">Multi-agent handoff observation</div>
+            </button>
+
+            <button type="button" onclick="selectSignalKind('domain_insight')" class="signal-row w-full text-left px-5 py-3.5 hover:bg-surfaceHover transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2" data-kind="domain_insight">
+              <div class="font-mono text-xs font-semibold text-purple-300">
+                domain_insight
+              </div>
+              <div class="text-xs text-slate-400">Reusable fact surfaced mid-session</div>
+            </button>
+
+            <button type="button" onclick="selectSignalKind('emerging_need')" class="signal-row w-full text-left px-5 py-3.5 hover:bg-surfaceHover transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2" data-kind="emerging_need">
+              <div class="font-mono text-xs font-semibold text-rose-300">
+                emerging_need
+              </div>
+              <div class="text-xs text-slate-400">Need no current agent/skill covers</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Sample Payload & Boundary Discipline Card -->
+        <div class="lg:col-span-5 flex flex-col gap-5">
+          <!-- Sample Signal Payload -->
+          <div class="rounded-2xl bg-surface border border-borderSubtle overflow-hidden">
+            <div class="px-4 py-2.5 bg-obsidian border-b border-borderSubtle flex items-center justify-between">
+              <span class="font-mono text-xs text-slate-400">SQLite WAL Event Preview</span>
+              <span id="signal-badge" class="font-mono text-[11px] text-cyan-400">task_failure</span>
+            </div>
+            <pre class="p-4 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed"><code id="signal-payload-code">{
+  "session_id": "demo1",
+  "kind": "task_failure",
+  "payload": "RuntimeError: timeout",
+  "agent": "sales-bot",
+  "journal_mode": "WAL"
+}</code></pre>
+          </div>
+
+          <!-- Boundary Discipline Card -->
+          <div class="rounded-2xl bg-surface border border-amber-500/30 p-5 flex-1">
+            <div class="flex items-center gap-2 font-mono text-xs font-bold text-amber-400 uppercase tracking-wider mb-2.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              <span>Boundary Discipline</span>
+            </div>
+            <ul class="space-y-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 font-mono mt-0.5">•</span>
+                <span>The claw governs <strong>constraints</strong>; it trains, versions, and promotes nothing (stays in <code class="font-mono text-xs text-cyan-300">evo-skillopt</code>) and deploys nothing (stays in <code class="font-mono text-xs text-amber-300">EvoForge</code>).</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 font-mono mt-0.5">•</span>
+                <span><strong>Sessions under 3 signals produce no draft</strong> (<span class="font-mono text-xs text-slate-400">anecdote ≠ pattern</span>).</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-amber-400 font-mono mt-0.5">•</span>
+                <span><strong>User feedback is the only quality signal</strong>; capture classifies mechanics only.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Quickstart & CLI Terminal -->
+  <section id="quickstart" class="py-16 sm:py-24 border-b border-borderSubtle bg-surface/30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+        <div>
+          <div class="text-xs font-mono uppercase tracking-wider text-cyan-400 mb-2">Zero Dependencies • Python Stdlib-Only</div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Quickstart CLI & SDK</h2>
+          <p class="text-sm text-slate-400 mt-1">Run the 16-test stdlib suite, gate candidate mutations, or capture and emit session signals.</p>
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-surface border border-borderSubtle overflow-hidden shadow-xl">
+        <!-- Terminal Header & Tabs -->
+        <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-obsidian border-b border-borderSubtle">
+          <div class="flex items-center gap-2">
+            <button type="button" id="tab-cli" onclick="switchTerminalTab('cli')" class="px-3 py-1.5 rounded-lg font-mono text-xs font-semibold bg-surface text-emerald-400 border border-emerald-500/40 transition-all">
+              CLI Workflow (capture / summarize / emit)
+            </button>
+            <button type="button" id="tab-sdk" onclick="switchTerminalTab('sdk')" class="px-3 py-1.5 rounded-lg font-mono text-xs text-slate-400 hover:text-white border border-transparent transition-all">
+              Python SDK (metaclaw.gate)
+            </button>
+          </div>
+          <button type="button" onclick="copyCurrentTerminal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface hover:bg-surfaceHover border border-borderSubtle text-xs font-mono text-slate-300 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            <span>Copy Commands</span>
+          </button>
+        </div>
+
+        <!-- CLI Content -->
+        <div id="panel-cli" class="p-5 sm:p-6 overflow-x-auto">
+          <pre class="font-mono text-xs sm:text-sm leading-relaxed text-slate-300"><code id="code-cli"><span class="text-slate-500"># 1. Install and run the stdlib-only test suite</span>
+<span class="text-emerald-400">$</span> pip install -e ".[dev]" && python -m pytest     <span class="text-slate-500"># 16 tests, stdlib-only</span>
+
+<span class="text-slate-500"># 2. Gate a mutation directly from the CLI</span>
+<span class="text-emerald-400">$</span> evo-metaclaw claw parent.md child.md --parent-fitness 0.8 --child-fitness 0.85
+
+<span class="text-slate-500"># 3. Capture production session signals (requires ≥ 3 signals to draft)</span>
+<span class="text-emerald-400">$</span> evo-metaclaw capture demo1 task_failure "RuntimeError: timeout" --agent sales-bot
+<span class="text-emerald-400">$</span> evo-metaclaw capture demo1 user_feedback "too verbose" --score -0.8
+<span class="text-emerald-400">$</span> evo-metaclaw capture demo1 emerging_need "needs PDF export"
+
+<span class="text-slate-500"># 4. Distill candidate SKILL.md and emit to evo-skillopt worker</span>
+<span class="text-emerald-400">$</span> evo-metaclaw summarize demo1                     <span class="text-slate-500"># → candidate SKILL.md</span>
+<span class="text-emerald-400">$</span> evo-metaclaw emit demo1 sales-bot --worker http://localhost:9000 --token $WORKER_TOKEN</code></pre>
+        </div>
+
+        <!-- Python SDK Content -->
+        <div id="panel-sdk" class="hidden p-5 sm:p-6 overflow-x-auto">
+          <pre class="font-mono text-xs sm:text-sm leading-relaxed text-slate-300"><code id="code-sdk"><span class="text-purple-400">from</span> metaclaw <span class="text-purple-400">import</span> Mutation, gate
+
+v = gate(Mutation(
+    parent_md=<span class="text-cyan-300">open</span>(<span class="text-amber-300">"skill_v1.md"</span>).read(),
+    child_md=<span class="text-cyan-300">open</span>(<span class="text-amber-300">"skill_v2.md"</span>).read(),
+    parent_fitness=<span class="text-emerald-300">0.80</span>,
+    child_fitness=<span class="text-emerald-300">0.848</span>,
+    depth=<span class="text-emerald-300">3</span>
+))
+
+<span class="text-cyan-300">print</span>(v)   <span class="text-slate-500"># REJECTED (Ci, Bl) — the +6% fitness is irrelevant</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 5: Position in the EvoForge Stack -->
+  <section id="triad-stack" class="py-16 sm:py-24 border-b border-borderSubtle">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="max-w-2xl mb-10">
+        <div class="text-xs font-mono uppercase tracking-wider text-emerald-400 mb-2">Ecosystem Architecture</div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Position in the EvoForge Stack</h2>
+        <p class="text-sm sm:text-base text-slate-400 mt-2">
+          Three cleanly separated layers governing runtime dispatch, held-out skill optimization, and constitutional safety.
+        </p>
+      </div>
+
+      <!-- 3-Tier Stack -->
+      <div class="space-y-4">
+        <!-- Layer 1: EvoForge -->
+        <a href="https://github.com/dnzengou/evoforge-repo" target="_blank" rel="noopener noreferrer" class="block rounded-2xl bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-borderHighlight p-5 sm:p-6 transition-all group">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-4">
+              <span class="w-10 h-10 rounded-xl bg-obsidian border border-borderSubtle flex items-center justify-center font-mono text-sm font-bold text-slate-400 shrink-0">
+                L1
+              </span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-mono text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">EvoForge</h3>
+                  <span class="text-xs font-mono text-slate-500">github.com/dnzengou/evoforge-repo ↗</span>
+                </div>
+                <p class="text-sm text-slate-400 mt-0.5">Scored Champions on real tasks; dispatch by cost/latency/success</p>
+              </div>
+            </div>
+            <span class="self-start sm:self-center px-3 py-1 rounded-lg bg-obsidian border border-borderSubtle font-mono text-xs text-slate-400">
+              Runtime & Dispatch
+            </span>
+          </div>
+        </a>
+
+        <!-- Layer 2: evo-skillopt -->
+        <a href="https://github.com/dnzengou/evo-skillopt" target="_blank" rel="noopener noreferrer" class="block rounded-2xl bg-surface hover:bg-surfaceHover border border-borderSubtle hover:border-borderHighlight p-5 sm:p-6 transition-all group">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-4">
+              <span class="w-10 h-10 rounded-xl bg-obsidian border border-borderSubtle flex items-center justify-center font-mono text-sm font-bold text-slate-400 shrink-0">
+                L2
+              </span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-mono text-lg font-bold text-white group-hover:text-cyan-300 transition-colors">evo-skillopt</h3>
+                  <span class="text-xs font-mono text-slate-500">github.com/dnzengou/evo-skillopt ↗</span>
+                </div>
+                <p class="text-sm text-slate-400 mt-0.5">Skill training with held-out gates and rollback</p>
+              </div>
+            </div>
+            <span class="self-start sm:self-center px-3 py-1 rounded-lg bg-obsidian border border-borderSubtle font-mono text-xs text-slate-400">
+              Training & Q-Gate
+            </span>
+          </div>
+        </a>
+
+        <!-- Layer 3: evo-metaclaw (Active / Highlighted) -->
+        <div class="rounded-2xl bg-surface border-2 border-emerald-500/60 p-5 sm:p-6 shadow-glow-emerald">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-4">
+              <span class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center font-mono text-sm font-bold text-emerald-400 shrink-0">
+                L3
+              </span>
+              <div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h3 class="font-mono text-lg font-bold text-white">evo-metaclaw</h3>
+                  <span class="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 font-mono text-[11px] font-semibold text-emerald-300">
+                    ACTIVE LAYER
+                  </span>
+                </div>
+                <p class="text-sm text-slate-200 mt-0.5">Four-axis claw on every mutation; live signal capture</p>
+              </div>
+            </div>
+            <span class="self-start sm:self-center px-3 py-1 rounded-lg bg-emerald-950/50 border border-emerald-500/40 font-mono text-xs text-emerald-300">
+              Governance & Signal
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 6: Honest Limits -->
+  <section id="honest-limits" class="py-16 sm:py-20">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="rounded-2xl bg-surface border border-borderSubtle p-6 sm:p-8">
+        <div class="flex items-center gap-2.5 mb-4">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+          <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">Honest Limits</h2>
+        </div>
+        <p class="text-sm text-slate-400 mb-6 max-w-2xl">
+          Engineering transparency on what the claw guarantees—and what remains the responsibility of your deployment topology.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <!-- Caveat 1 -->
+          <div class="p-5 rounded-xl bg-obsidian border border-borderSubtle">
+            <div class="font-mono text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">
+              01 • Textual Tripwire vs. Semantic Proof
+            </div>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              The claw's <code class="font-mono text-xs text-rose-300">Bl</code> axis is textual: a clause deleted <em>and</em> meaningfully preserved in other words passes. Treat it as a tripwire, not a proof.
+            </p>
+          </div>
+
+          <!-- Caveat 2 -->
+          <div class="p-5 rounded-xl bg-obsidian border border-borderSubtle">
+            <div class="font-mono text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">
+              02 • Mutation Path Wiring
+            </div>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              "Makes the edit illegal" holds where the gate is wired into the mutation path. In a given deployment, verify the wiring before trusting the claim.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Minimal Footer -->
+  <footer class="border-t border-borderSubtle bg-obsidian py-10">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-slate-400">
+      <div class="flex items-center gap-3">
+        <span class="text-slate-200 font-semibold">evo-metaclaw</span>
+        <span>•</span>
+        <span>MIT License</span>
+      </div>
+      <div class="flex flex-wrap items-center justify-center gap-5">
+        <a href="https://github.com/dnzengou/evo-metaclaw/blob/main/docs/architecture.md" target="_blank" rel="noopener noreferrer" class="hover:text-emerald-400 transition-colors">
+          docs/architecture.md
+        </a>
+        <a href="https://github.com/dnzengou/evoforge-repo" target="_blank" rel="noopener noreferrer" class="hover:text-cyan-400 transition-colors">
+          EvoForge
+        </a>
+        <a href="https://github.com/dnzengou/evo-skillopt" target="_blank" rel="noopener noreferrer" class="hover:text-cyan-400 transition-colors">
+          evo-skillopt
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive Application Logic -->
+  <script>
+    // Mobile Menu Toggle
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuBtn && mobileMenu) {
+      mobileMenuBtn.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    }
+
+    // Toast Notification Helper (Replaces alert())
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'px-4 py-2.5 rounded-xl bg-surface border border-emerald-500/50 text-xs font-mono text-emerald-300 shadow-lg flex items-center gap-2 transition-all duration-300 opacity-0 translate-y-2';
+      toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-2');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2400);
+    }
+
+    // Clipboard Copy Helper using execCommand fallback for iFrame safety
+    function copyTextToClipboard(text, successMsg) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast(successMsg || 'Copied to clipboard');
+      } catch (err) {
+        showToast('Unable to copy text');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function copyElementText(elementId, successMsg) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        copyTextToClipboard(el.innerText, successMsg);
+      }
+    }
+
+    // Hero Interactive Diagram Axis Inspector
+    const diagramAxisDescriptions = {
+      B: '<span class="text-emerald-400 font-bold">[B • Budget]</span> Cost and hours must not jump. Prevents "improvement" that is secretly a resource grab.',
+      Ci: '<span class="text-cyan-400 font-bold">[Ci • Circuit]</span> Self-edit recursion depth ≤ 2. Caps self-modification depth (matches EvoForge max_depth=2).',
+      E: '<span class="text-amber-400 font-bold">[E • Evolution]</span> Child fitness ≥ 0.8 × parent. Blocks regressions dressed as exploration.',
+      Bl: '<span class="text-rose-400 font-bold">[Bl • Blacklist]</span> Airgap, kill-switch, ownership, rate-limit… clauses cannot be deleted. Constitutional preconditions.'
+    };
+
+    function inspectDiagramAxis(axis) {
+      const panel = document.getElementById('diagram-detail-panel');
+      if (panel && diagramAxisDescriptions[axis]) {
+        panel.innerHTML = `
+          <div>${diagramAxisDescriptions[axis]}</div>
+          <a href="#simulator" class="text-cyan-400 hover:underline shrink-0">Test ${axis} in simulator →</a>
+        `;
+      }
+    }
+
+    // ==========================================
+    // Interactive Claw Gate Simulator State
+    // ==========================================
+    let simState = {
+      parentFitness: 0.80,
+      childFitness: 0.848,
+      depth: 3,
+      budgetOk: true
+    };
+
+    const parentSlider = document.getElementById('parent-fitness');
+    const childSlider = document.getElementById('child-fitness');
+    const depthSlider = document.getElementById('depth-slider');
+
+    parentSlider.addEventListener('input', (e) => {
+      simState.parentFitness = parseFloat(e.target.value);
+      evaluateGate();
+    });
+
+    childSlider.addEventListener('input', (e) => {
+      simState.childFitness = parseFloat(e.target.value);
+      evaluateGate();
+    });
+
+    depthSlider.addEventListener('input', (e) => {
+      simState.depth = parseInt(e.target.value, 10);
+      evaluateGate();
+    });
+
+    function stepDepth(delta) {
+      const next = Math.min(5, Math.max(0, simState.depth + delta));
+      simState.depth = next;
+      depthSlider.value = next;
+      evaluateGate();
+    }
+
+    function setBudget(isOk) {
+      simState.budgetOk = isOk;
+      const okBtn = document.getElementById('budget-ok-btn');
+      const jumpBtn = document.getElementById('budget-jump-btn');
+      const statusText = document.getElementById('budget-status-text');
+
+      if (isOk) {
+        okBtn.className = 'py-2 px-3 rounded-xl font-mono text-xs border transition-all bg-emerald-500/15 border-emerald-500/50 text-emerald-300 font-semibold';
+        jumpBtn.className = 'py-2 px-3 rounded-xl font-mono text-xs border transition-all bg-obsidian border-borderSubtle text-slate-400 hover:text-slate-200';
+        statusText.textContent = 'Within bounds';
+        statusText.className = 'text-xs font-mono text-emerald-400';
+      } else {
+        jumpBtn.className = 'py-2 px-3 rounded-xl font-mono text-xs border transition-all bg-rose-500/15 border-rose-500/50 text-rose-300 font-semibold';
+        okBtn.className = 'py-2 px-3 rounded-xl font-mono text-xs border transition-all bg-obsidian border-borderSubtle text-slate-400 hover:text-slate-200';
+        statusText.textContent = 'Cost/hours jump!';
+        statusText.className = 'text-xs font-mono text-rose-400';
+      }
+      evaluateGate();
+    }
+
+    function applyPreset(presetName) {
+      if (presetName === 'readme_reject') {
+        simState.parentFitness = 0.80;
+        simState.childFitness = 0.848;
+        simState.depth = 3;
+        document.getElementById('clause-airgap').checked = true;
+        document.getElementById('clause-killswitch').checked = false;
+        document.getElementById('clause-ownership').checked = true;
+        document.getElementById('clause-ratelimit').checked = true;
+        setBudget(true);
+      } else if (presetName === 'valid_pass') {
+        simState.parentFitness = 0.80;
+        simState.childFitness = 0.848;
+        simState.depth = 2;
+        document.getElementById('clause-airgap').checked = true;
+        document.getElementById('clause-killswitch').checked = true;
+        document.getElementById('clause-ownership').checked = true;
+        document.getElementById('clause-ratelimit').checked = true;
+        setBudget(true);
+      }
+      parentSlider.value = simState.parentFitness;
+      childSlider.value = simState.childFitness;
+      depthSlider.value = simState.depth;
+      evaluateGate();
+    }
+
+    function updateAxisPill(id, passed) {
+      const el = document.getElementById(id);
+      const axisName = id.replace('pill-', '');
+      if (passed) {
+        el.className = 'p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-center transition-colors';
+        el.innerHTML = `<div class="font-mono text-xs font-bold text-emerald-400">${axisName}</div><div class="font-mono text-[10px] text-emerald-300">OK</div>`;
+      } else {
+        el.className = 'p-2 rounded-lg bg-rose-500/15 border border-rose-500/40 text-center transition-colors';
+        el.innerHTML = `<div class="font-mono text-xs font-bold text-rose-400">${axisName}</div><div class="font-mono text-[10px] text-rose-300">FAIL</div>`;
+      }
+    }
+
+    function evaluateGate() {
+      const pf = simState.parentFitness;
+      const cf = simState.childFitness;
+      const depth = simState.depth;
+
+      // Update UI labels
+      document.getElementById('parent-fitness-val').textContent = pf.toFixed(3);
+      document.getElementById('child-fitness-val').textContent = cf.toFixed(3);
+      document.getElementById('depth-val').textContent = depth;
+
+      const minRequiredFitness = pf * 0.8;
+      document.getElementById('e-threshold-label').textContent = `Min required: ${minRequiredFitness.toFixed(3)}`;
+
+      // Calculate percentage delta
+      const pctDelta = pf > 0 ? ((cf - pf) / pf) * 100 : 0;
+      const deltaPill = document.getElementById('fitness-delta-pill');
+      const sign = pctDelta >= 0 ? '+' : '';
+      deltaPill.textContent = `${sign}${pctDelta.toFixed(1)}% fitness delta`;
+      deltaPill.className = pctDelta >= 0
+        ? 'px-2.5 py-0.5 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+        : 'px-2.5 py-0.5 rounded-full text-xs font-mono bg-amber-500/10 text-amber-400 border border-amber-500/30';
+
+      // Evaluate Constitutional Clauses (Bl)
+      const clauses = [
+        { id: 'clause-airgap', name: 'airgap' },
+        { id: 'clause-killswitch', name: 'kill-switch' },
+        { id: 'clause-ownership', name: 'ownership' },
+        { id: 'clause-ratelimit', name: 'rate-limit' }
+      ];
+      const missingClauses = clauses
+        .filter(c => !document.getElementById(c.id).checked)
+        .map(c => c.name);
+
+      const blStatusText = document.getElementById('bl-status-text');
+      if (missingClauses.length === 0) {
+        blStatusText.textContent = 'All 4 clauses intact';
+        blStatusText.className = 'text-xs font-mono text-emerald-400';
+      } else {
+        blStatusText.textContent = `${missingClauses.length} clause(s) deleted!`;
+        blStatusText.className = 'text-xs font-mono text-rose-400';
+      }
+
+      // Check each axis
+      const passB = simState.budgetOk;
+      const passCi = depth <= 2;
+      const passE = cf >= minRequiredFitness - 1e-9;
+      const passBl = missingClauses.length === 0;
+
+      updateAxisPill('pill-B', passB);
+      updateAxisPill('pill-Ci', passCi);
+      updateAxisPill('pill-E', passE);
+      updateAxisPill('pill-Bl', passBl);
+
+      const failedAxes = [];
+      const failureReasons = [];
+
+      if (!passB) {
+        failedAxes.push('B');
+        failureReasons.push('cost/hours jumped beyond budget envelope');
+      }
+      if (!passCi) {
+        failedAxes.push('Ci');
+        failureReasons.push(`recursion depth ${depth} > 2`);
+      }
+      if (!passE) {
+        failedAxes.push('E');
+        failureReasons.push(`child fitness ${cf.toFixed(3)} < 0.8 × parent (${minRequiredFitness.toFixed(3)})`);
+      }
+      if (!passBl) {
+        failedAxes.push('Bl');
+        failureReasons.push(`deleted constitutional clause(s): ${missingClauses.join(', ')}`);
+      }
+
+      const verdictCard = document.getElementById('verdict-card');
+      const verdictBadge = document.getElementById('verdict-badge');
+      const verdictExplanation = document.getElementById('verdict-explanation');
+      const verdictString = failedAxes.length === 0
+        ? 'STAMPED: PASS'
+        : `REJECTED (${failedAxes.join(', ')})`;
+
+      if (failedAxes.length === 0) {
+        verdictCard.className = 'rounded-2xl bg-emerald-950/25 border border-emerald-500/50 p-5 sm:p-6 transition-all shadow-glow-emerald';
+        verdictBadge.className = 'px-3 py-1 rounded-lg font-mono text-sm font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50';
+        verdictBadge.textContent = verdictString;
+        verdictExplanation.innerHTML = `All four governance axes satisfied. Child skill is stamped and allowed to proceed to <code class="text-cyan-300 font-mono">evo-skillopt</code> evaluation.`;
+      } else {
+        verdictCard.className = 'rounded-2xl bg-rose-950/25 border border-rose-500/50 p-5 sm:p-6 transition-all shadow-glow-crimson';
+        verdictBadge.className = 'px-3 py-1 rounded-lg font-mono text-sm font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50';
+        verdictBadge.textContent = verdictString;
+
+        const fitnessNote = pctDelta > 0
+          ? `The <strong class="text-white">${sign}${pctDelta.toFixed(1)}% fitness gain</strong> is irrelevant. `
+          : '';
+        verdictExplanation.innerHTML = `${fitnessNote}Child dies before execution because ${failureReasons.join('; ')}.`;
+      }
+
+      // Update Live Python Code Snippet
+      const commentNote = failedAxes.length > 0 && pctDelta > 0
+        ? `  # ${verdictString} — the ${sign}${pctDelta.toFixed(1)}% fitness is irrelevant`
+        : `  # ${verdictString}`;
+
+      const codeEl = document.getElementById('live-python-code');
+      codeEl.textContent = `from metaclaw import Mutation, gate
+
+v = gate(Mutation(
+    parent_md=open("skill_v1.md").read(),
+    child_md=open("skill_v2.md").read(),
+    parent_fitness=${pf.toFixed(2)},
+    child_fitness=${cf.toFixed(3)},
+    depth=${depth}${!passB ? ',\n    cost_delta=3.4' : ''}${!passBl ? `,\n    # missing: ${missingClauses.join(', ')}` : ''}
+))
+print(v)${commentNote}`;
+    }
+
+    // ==========================================
+    // Signal Event Explorer Logic
+    // ==========================================
+    const signalSamples = {
+      task_outcome: {
+        badge: 'task_failure',
+        json: `{
+  "session_id": "demo1",
+  "kind": "task_failure",
+  "payload": "RuntimeError: timeout",
+  "agent": "sales-bot",
+  "journal_mode": "WAL"
+}`
+      },
+      user_feedback: {
+        badge: 'user_feedback',
+        json: `{
+  "session_id": "demo1",
+  "kind": "user_feedback",
+  "payload": "too verbose",
+  "score": -0.8,
+  "quality_signal": true
+}`
+      },
+      coordination: {
+        badge: 'coordination',
+        json: `{
+  "session_id": "demo1",
+  "kind": "coordination",
+  "from_agent": "triage-bot",
+  "to_agent": "sales-bot",
+  "observation": "context dropped on handoff"
+}`
+      },
+      domain_insight: {
+        badge: 'domain_insight',
+        json: `{
+  "session_id": "demo1",
+  "kind": "domain_insight",
+  "payload": "EU enterprise quotes require VAT ID field",
+  "reusable": true
+}`
+      },
+      emerging_need: {
+        badge: 'emerging_need',
+        json: `{
+  "session_id": "demo1",
+  "kind": "emerging_need",
+  "payload": "needs PDF export",
+  "covered_by_existing_skill": false
+}`
+      }
+    };
+
+    function selectSignalKind(kind) {
+      const sample = signalSamples[kind];
+      if (!sample) return;
+
+      document.getElementById('signal-badge').textContent = sample.badge;
+      document.getElementById('signal-payload-code').textContent = sample.json;
+
+      document.querySelectorAll('.signal-row').forEach(row => {
+        if (row.getAttribute('data-kind') === kind) {
+          row.classList.add('bg-surfaceHover/60');
+        } else {
+          row.classList.remove('bg-surfaceHover/60');
+        }
+      });
+    }
+
+    // ==========================================
+    // Quickstart Terminal Tabs
+    // ==========================================
+    let activeTerminalTab = 'cli';
+
+    function switchTerminalTab(tab) {
+      activeTerminalTab = tab;
+      const tabCli = document.getElementById('tab-cli');
+      const tabSdk = document.getElementById('tab-sdk');
+      const panelCli = document.getElementById('panel-cli');
+      const panelSdk = document.getElementById('panel-sdk');
+
+      if (tab === 'cli') {
+        tabCli.className = 'px-3 py-1.5 rounded-lg font-mono text-xs font-semibold bg-surface text-emerald-400 border border-emerald-500/40 transition-all';
+        tabSdk.className = 'px-3 py-1.5 rounded-lg font-mono text-xs text-slate-400 hover:text-white border border-transparent transition-all';
+        panelCli.classList.remove('hidden');
+        panelSdk.classList.add('hidden');
+      } else {
+        tabSdk.className = 'px-3 py-1.5 rounded-lg font-mono text-xs font-semibold bg-surface text-emerald-400 border border-emerald-500/40 transition-all';
+        tabCli.className = 'px-3 py-1.5 rounded-lg font-mono text-xs text-slate-400 hover:text-white border border-transparent transition-all';
+        panelSdk.classList.remove('hidden');
+        panelCli.classList.add('hidden');
+      }
+    }
+
+    function copyCurrentTerminal() {
+      const sourceId = activeTerminalTab === 'cli' ? 'code-cli' : 'code-sdk';
+      copyElementText(sourceId, activeTerminalTab === 'cli' ? 'CLI commands copied' : 'Python SDK snippet copied');
+    }
+
+    // Initialize Simulator on load
+    window.addEventListener('DOMContentLoaded', () => {
+      evaluateGate();
+    });
+  </script>
+</body>
+</html>
