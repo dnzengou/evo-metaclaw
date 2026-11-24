@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EvoMetaClaw — the lock on self-evolving AI agents</title>
+<meta name="description" content="Evolution proposes. The claw decides what is allowed to stay. Four-axis governance gate for self-improving agent systems.">
+<style>
+  :root { --bg:#0d1117; --fg:#e6edf3; --mut:#8b949e; --acc:#f97583; --ok:#3fb950; --card:#161b22; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--fg); font:16px/1.6 -apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:820px; margin:0 auto; padding:3rem 1.25rem; }
+  h1 { font-size:2.4rem; letter-spacing:-.02em; }
+  h1 span { color:var(--acc); }
+  .tag { color:var(--mut); font-size:1.15rem; margin:.5rem 0 2rem; }
+  .axes { display:grid; gap:.75rem; margin:2rem 0; }
+  .axis { background:var(--card); border:1px solid #30363d; border-radius:10px; padding:1rem 1.25rem; }
+  .axis b { color:var(--acc); font-family:ui-monospace,monospace; }
+  .axis small { display:block; color:var(--mut); }
+  .verdict { background:var(--card); border-left:4px solid var(--acc); border-radius:8px;
+             padding:1rem 1.25rem; margin:2rem 0; font-family:ui-monospace,monospace; font-size:.92rem; }
+  .verdict .p { color:var(--ok); } .verdict .f { color:var(--acc); }
+  a { color:var(--acc); }
+  footer { color:var(--mut); font-size:.85rem; margin-top:3rem; border-top:1px solid #30363d; padding-top:1rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Evo<span>Meta</span>Claw</h1>
+  <p class="tag">Evolution proposes. The claw decides what is allowed to stay.</p>
+
+  <p>Self-improving agents get better every epoch — and a pure fitness loop will
+  eventually delete the cost cap, the airgap, or the kill-switch, because
+  constraints cost fitness. EvoMetaClaw fingerprints every proposed child and
+  stamps or rejects it on four axes <em>before it ever runs</em>.</p>
+
+  <div class="axes">
+    <div class="axis"><b>B</b> — Budget <small>Cost and hours must not jump.</small></div>
+    <div class="axis"><b>Ci</b> — Circuit <small>No infinite self-edit. Recursion depth ≤ 2.</small></div>
+    <div class="axis"><b>E</b> — Evolution <small>Child fitness ≥ 0.8 × parent.</small></div>
+    <div class="axis"><b>Bl</b> — Blacklist <small>Airgap, bounds, kill-switch, ownership clauses cannot be deleted.</small></div>
+  </div>
+
+  <div class="verdict">
+    child-0417 &nbsp;(+6% fitness)<br>
+    <span class="p">B ✅</span>&nbsp; <span class="f">Ci ❌ depth &gt; 2</span>&nbsp;
+    <span class="p">E ✅</span>&nbsp; <span class="f">Bl ❌ airgap deleted</span><br><br>
+    VERDICT: REJECTED (Ci, Bl) — gain irrelevant, child never runs.
+  </div>
+
+  <p>Part of the EvoForge ecosystem:
+  <a href="https://github.com/dnzengou/evoforge-repo">EvoForge</a> (scored Champions) ·
+  <a href="https://github.com/dnzengou/evo-skillopt">evo-skillopt</a> (gated skill training) ·
+  <b>evo-metaclaw</b> (the lock) —
+  <a href="https://github.com/dnzengou/evo-metaclaw">code, CLI, 16 tests</a>.</p>
+
+  <footer>Some clauses are not variables in the optimisation. They are the
+  conditions under which optimisation is permitted.</footer>
+</main>
+</body>
+</html>
